@@ -461,16 +461,13 @@ If BODY finishes, `while-no-input' returns whatever value BODY produced."
 
 (defun aggressive-indent--indent-if-changed (buffer)
   "Indent any region that changed in BUFFER in the last command loop."
-  (if (not (buffer-live-p buffer))
-      (cancel-timer aggressive-indent--idle-timer)
+  (when (buffer-live-p buffer)
     (with-current-buffer buffer
       (when (and aggressive-indent-mode aggressive-indent--changed-list)
-        (save-excursion
-          (save-selected-window
-            (aggressive-indent--while-no-input
-              (aggressive-indent--proccess-changed-list-and-indent))))
-        (when (timerp aggressive-indent--idle-timer)
-          (cancel-timer aggressive-indent--idle-timer))))))
+	(save-excursion
+	  (save-selected-window
+	    (aggressive-indent--while-no-input
+	      (aggressive-indent--proccess-changed-list-and-indent))))))))
 
 (defun aggressive-indent--keep-track-of-changes (l r &rest _)
   "Store the limits (L and R) of each change in the buffer."
@@ -479,7 +476,7 @@ If BODY finishes, `while-no-input' returns whatever value BODY produced."
     (when (timerp aggressive-indent--idle-timer)
       (cancel-timer aggressive-indent--idle-timer))
     (setq aggressive-indent--idle-timer
-          (run-with-idle-timer aggressive-indent-sit-for-time t #'aggressive-indent--indent-if-changed (current-buffer)))))
+	  (run-with-idle-timer aggressive-indent-sit-for-time nil #'aggressive-indent--indent-if-changed (current-buffer)))))
 
 (defun aggressive-indent--on-buffer-kill ()
   "Cancel the timer before buffer is killed"
